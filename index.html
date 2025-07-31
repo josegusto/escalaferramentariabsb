@@ -3,335 +3,233 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escala Ferramentaria GOL (BSB) - Agosto</title>
+    <title>Construtor de Escala Colaborativo</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
-        @media print {
-            body {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-                background-color: white;
-            }
-            .no-print {
-                display: none;
-            }
-            .print-container {
-                margin: 0;
-                padding: 0;
-                border: none;
-                box-shadow: none;
-            }
-            html, body {
-                width: 210mm;
-                height: 297mm;
-                margin: 0;
-                padding: 0;
-            }
-            .name-tag {
-                border-color: #000 !important;
-                color: #000 !important;
-                background-color: #fff !important;
-            }
-             .weekend {
-                background-color: #f0f0f0 !important;
-            }
-            #schedule-head {
-                 background-color: #e5e7eb !important;
-            }
-        }
-        .name-tag {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            margin: 1px;
-            white-space: nowrap;
-            border: 1px solid #ccc;
-        }
-        .tag-principal { font-weight: 700; }
-        .tag-rendicao { font-weight: 700; border-width: 2px; border-color: #000; }
-        .tag-disponivel { font-weight: 400; color: #9ca3af; border-color: #d1d5db; }
+        body { font-family: 'Inter', sans-serif; }
+        [contenteditable="true"] { cursor: text; padding: 6px 8px; transition: background-color 0.2s; border-radius: 4px; }
+        [contenteditable="true"]:hover { background-color: #f0f8ff; }
+        [contenteditable="true"]:focus { background-color: #e6f2ff; outline: 2px solid #4a90e2; }
+        .delete-btn { cursor: pointer; color: #ef4444; transition: all 0.2s; display: inline-block; text-align: center; width: 1.5rem; font-weight: bold; font-size: 1.1rem; }
+        .delete-btn:hover { color: #b91c1c; transform: scale(1.1); }
+        .action-button { background-color: #3b82f6; color: white; font-weight: bold; padding: 8px 16px; border-radius: 8px; transition: background-color 0.2s; }
+        .action-button:hover { background-color: #2563eb; }
+        #status { position: fixed; bottom: 10px; right: 10px; background-color: #22c55e; color: white; padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; transition: opacity 0.5s; opacity: 0; z-index: 100; }
+        #status.show { opacity: 1; }
         
-        .bg-gray-100 { background-color: #f3f4f6; }
-        .bg-gray-200 { background-color: #e5e7eb; }
-        .weekend {
-            background-color: #f3f4f6;
-        }
-        .btn-shift {
-            transition: all 0.2s ease-in-out;
-        }
-        .btn-shift.active {
-            background-color: #4b5563; /* gray-600 */
-            color: white;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background-color: #fff; margin: 20px; }
+            .no-print { display: none; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #000 !important; padding: 8px; color: #000 !important; }
+            thead { background-color: #e5e5e5 !important; }
+            [contenteditable="true"] { background-color: transparent !important; padding: 8px; }
+            .header-print { display: flex !important; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+            .header-print img { height: 40px; }
         }
     </style>
 </head>
-<body class="bg-gray-100 p-2 sm:p-4 md:p-8">
+<body class="bg-gray-100 p-4 sm:p-8">
 
-    <div id="schedule-container" class="print-container max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-4 sm:p-6 md:p-8">
-        <!-- Header -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+    <div id="main-content" class="print-container max-w-6xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-10">
+        
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
             <div class="flex items-center mb-4 sm:mb-0">
-                <img src="https://i.imgur.com/ApK41Jx.png" alt="Logo da GOL" class="h-10 mr-4">
+                <img src="https://i.imgur.com/ApK41Jx.png" alt="Logo da GOL" class="h-12 mr-4 no-print">
                 <div>
-                    <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Escala de Ferramentaria</h1>
-                    <p class="text-md md:text-lg text-gray-500">Brasilia (BSB) - Agosto 2025</p>
+                    <h1 id="main-title" class="text-2xl md:text-3xl font-bold text-gray-800" contenteditable="true">Escala de Conferência</h1>
+                    <p id="main-subtitle" class="text-md md:text-lg text-gray-500" contenteditable="true">Ferramentaria BSB - Agosto 2025</p>
                 </div>
             </div>
-            <button onclick="window.print()" class="no-print w-full sm:w-auto bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v6a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7V9h6v3z" clip-rule="evenodd" />
-                </svg>
-                Imprimir / Gerar PDF
-            </button>
+            <button onclick="window.print()" class="no-print action-button w-full sm:w-auto">Imprimir / Gerar PDF</button>
         </div>
         
-        <!-- Shift Buttons -->
-        <div class="no-print mb-6 flex flex-wrap items-center justify-center sm:justify-start rounded-lg bg-gray-200 p-1 space-x-1">
-            <button id="btn-manha" class="btn-shift flex-grow sm:flex-grow-0 px-4 py-2 text-sm font-semibold text-gray-600 rounded-md">Manha</button>
-            <button id="btn-noite" class="btn-shift flex-grow sm:flex-grow-0 px-4 py-2 text-sm font-semibold text-gray-600 rounded-md">Noite / PNT</button>
+        <div class="hidden header-print">
+            <img src="https://i.imgur.com/ApK41Jx.png" alt="Logo da GOL">
+            <div><h1 class="text-xl font-bold">Escala de Conferência de Ferramentaria</h1><p class="text-sm">Brasília (BSB) - Agosto 2025</p></div>
         </div>
 
-        <!-- Legend -->
-        <div id="legend-container" class="mb-6 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-            <div class="flex items-center"><span class="name-tag tag-principal mr-2">Principal</span> Equipe no posto</div>
-            <div class="flex items-center"><span class="name-tag tag-rendicao mr-2">Rendicao</span> Equipe de rendicao</div>
-            <div class="flex items-center"><span class="name-tag tag-disponivel mr-2">Disponivel</span> Equipe de apoio</div>
+        <div class="mb-10">
+            <h3 class="text-xl font-bold text-gray-800 mb-3" contenteditable="true">Observações Gerais</h3>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <ul id="notes-list" class="list-disc list-inside space-y-2">
+                    <li><span contenteditable="true">O controle de inflamáveis será feito pelo colaborador que estiver no Hangar.</span><span class="delete-btn no-print ml-4" onclick="deleteListItem(this)">✖</span></li>
+                </ul>
+                <button onclick="addNote()" class="no-print mt-4 text-sm action-button">+ Adicionar Observação</button>
+            </div>
         </div>
 
-        <!-- Schedule Table -->
-        <div class="overflow-x-auto">
-            <table class="min-w-full text-sm text-left text-gray-700">
-                <thead id="schedule-head" class="bg-gray-200 text-gray-600 uppercase text-xs tracking-wider">
-                    <!-- Header will be generated by JavaScript -->
-                </thead>
-                <tbody id="schedule-body" class="bg-white">
-                    <!-- Rows will be generated by JavaScript -->
-                </tbody>
-            </table>
+        <div class="mb-10">
+            <h3 class="text-xl font-bold text-gray-800 mb-3" contenteditable="true">Lista de Locations</h3>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <ul id="location-list" class="list-disc list-inside space-y-2">
+                    <li><span contenteditable="true">Pinos e Fones (Pier)</span><span class="delete-btn no-print ml-4" onclick="deleteListItem(this)">✖</span></li>
+                    <li><span contenteditable="true">Caixas Azuis (Hangar)</span><span class="delete-btn no-print ml-4" onclick="deleteListItem(this)">✖</span></li>
+                </ul>
+                <button onclick="addLocation()" class="no-print mt-4 text-sm action-button">+ Adicionar Location</button>
+            </div>
         </div>
+
+        <div id="periods-container" class="space-y-12">
+            <!-- Períodos serão carregados aqui -->
+        </div>
+        <button onclick="addPeriod()" class="no-print mt-8 w-full action-button">+ Adicionar Novo Período de Escala</button>
     </div>
+    <div id="status" class="no-print">Salvo!</div>
+
+<script type="module">
+    // Importações do Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // --- CONFIGURAÇÃO DO FIREBASE ---
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "YOUR_API_KEY", authDomain: "YOUR_AUTH_DOMAIN", projectId: "YOUR_PROJECT_ID" };
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
     
-    <script>
-        // --- DATA ---
-        const staffMorning = {
-            wesleyson: { name: "Wesleyson", off: [4, 5, 12, 13, 16, 17, 21, 22, 25, 26, 29, 30], team: 'apoio' },
-            gerson:    { name: "Gerson", off: [1, 2, 8, 9, 15, 21, 22, 24, 25, 31], team: 'apoio' },
-            tarlysson: { name: "Tarlysson", off: [3, 4, 10, 11, 15, 16, 22, 27, 28], team: 'apoio' },
-            gleidson:  { name: "Gleidson", off: [1, 8, 9, 12, 13, 17, 18, 24, 28, 29], team: 'apoio' },
-            renato:    { name: "Renato", off: [2, 9, 13, 16, 17, 24, 25, 29, 30], team: 'apoio' },
-            lucas_maia:{ name: "Lucas Maia", off: [3, 4, 8, 9, 13, 14, 19, 24, 29, 30], team: 'apoio' },
-            carlos_w:  { name: "Carlos W.", off: [1, 2, 6, 8, 9, 13, 14, 20, 23, 24, 28], team: 'principal' },
-            rodrigo_p: { name: "Rodrigo P.", off: [3, 4, 5, 10, 15, 18, 19, 22, 25, 26, 29], team: 'principal' },
-        };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
 
-        const staffNight = {
-            julie:     { name: "Julie", off: [2, 6, 7, 11, 12, 17, 18, 19, 20, 24, 29], time: '17:00', team: 'principal' },
-            lais:      { name: "Lais", off: [1, 8, 9, 14, 15, 16, 21, 22, 26, 30, 31], time: '17:00', team: 'principal' },
-            lucas_g:   { name: "Lucas G.", off: [1, 5, 10, 11, 17, 24, 30], time: '17:00', team: 'apoio' },
-            esteffano: { name: "Esteffano", off: [1, 7, 13, 19, 20, 24, 25, 31], time: '16:00', team: 'apoio' },
-            thalles_t: { name: "Thalles T.", off: [6, 10, 11, 17, 18, 23, 29], time: '16:00', team: 'apoio' },
-            paulo_r:   { name: "Paulo R.", off: [2, 3, 8, 14, 15, 21, 22, 28], time: '16:00', team: 'apoio' },
-            thamires:  { name: "Thamires", off: [1, 4, 9, 10, 11, 16, 21, 25], time: '17:00', team: 'apoio' },
-            ramos:     { name: "Ramos", off: [1, 3, 4, 9, 10, 14, 20, 21, 27], time: '18:45', team: 'apoio' },
-            claudio:   { name: "Claudio", off: [1, 8, 10, 11, 12, 17, 23, 28], time: '18:45', team: 'apoio' },
-            natanael:  { name: "Natanael", off: [3, 4, 5, 10, 11, 15, 19, 23, 26, 27], time: '23:00', team: 'pnt' },
-            joao:      { name: "Joao", off: [2, 7, 12, 13, 14, 20, 21, 24, 25, 28, 29], time: '23:00', team: 'pnt' },
-        };
+    // --- AUTENTICAÇÃO E CARGA DOS DADOS ---
+    let dbRef;
+    let isUpdating = false; // Flag para evitar loop de updates
 
-        // --- GLOBAL VARS ---
-        const year = 2025;
-        const month = 7; // August (0-indexed)
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const weekDays = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'];
-        const tableHead = document.getElementById('schedule-head');
-        const tableBody = document.getElementById('schedule-body');
-        const legendContainer = document.getElementById('legend-container');
-        const btnManha = document.getElementById('btn-manha');
-        const btnNoite = document.getElementById('btn-noite');
-
-        // --- FUNCTIONS ---
-        function createTag(text, tagClass) {
-            return `<span class="name-tag ${tagClass}">${text}</span>`;
-        }
-        
-        function shuffleArray(array, seed) {
-            let currentIndex = array.length, randomIndex;
-            const pseudoRandom = () => {
-                var x = Math.sin(seed++) * 10000;
-                return x - Math.floor(x);
-            };
-            while (currentIndex != 0) {
-                randomIndex = Math.floor(pseudoRandom() * currentIndex);
-                currentIndex--;
-                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+    async function initApp() {
+        try {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
             }
-            return array;
-        }
-
-        function generateMorningSchedule() {
-            tableHead.innerHTML = `
-                <tr>
-                    <th class="p-2 text-center">Data</th><th class="p-2 text-center">Dia</th><th class="p-2">Hangar (05:00)</th><th class="p-2">Rend. Hangar</th><th class="p-2">Pier (Principal)</th><th class="p-2">Equipe Pier</th>
-                </tr>`;
-            tableBody.innerHTML = '';
-            let pierAlternator = 0;
-            let lastDayAssignments = {};
-
-            for (let day = 1; day <= daysInMonth; day++) {
-                const isWorking = (person, day) => !staffMorning[person].off.includes(day);
-                
-                const workingPrincipals = ['carlos_w', 'rodrigo_p'].filter(p => isWorking(p, day));
-                let availableSupport = Object.keys(staffMorning).filter(p => staffMorning[p].team === 'apoio' && isWorking(p, day));
-                
-                let hangarPrincipal = null, pierPrincipal = null;
-                if (workingPrincipals.length === 2) {
-                    pierPrincipal = pierAlternator === 0 ? 'rodrigo_p' : 'carlos_w';
-                    hangarPrincipal = pierAlternator === 0 ? 'carlos_w' : 'rodrigo_p';
-                    pierAlternator = 1 - pierAlternator;
-                } else if (workingPrincipals.length === 1) {
-                    hangarPrincipal = workingPrincipals[0];
-                }
-
-                // Fair rotation logic
-                let poolForHangar = availableSupport.filter(p => p !== lastDayAssignments.rendHangar);
-                if (poolForHangar.length === 0) poolForHangar = [...availableSupport];
-                poolForHangar = shuffleArray(poolForHangar, day + 10);
-
-                const rendHangar = poolForHangar.shift();
-                availableSupport = availableSupport.filter(p => p !== rendHangar);
-
-                let poolForPier = availableSupport.filter(p => p !== lastDayAssignments.rendPier);
-                if (poolForPier.length === 0) poolForPier = [...availableSupport];
-                poolForPier = shuffleArray(poolForPier, day + 20);
-                
-                const rendPier = poolForPier.shift();
-                availableSupport = availableSupport.filter(p => p !== rendPier);
-
-
-                const hangarHTML = hangarPrincipal ? createTag(staffMorning[hangarPrincipal].name, 'tag-principal') : '<span class="text-gray-400">-</span>';
-                const rendHangarHTML = rendHangar ? createTag(staffMorning[rendHangar].name, 'tag-rendicao') : '<span class="text-gray-400">-</span>';
-                const pierPrincipalHTML = pierPrincipal ? createTag(staffMorning[pierPrincipal].name, 'tag-principal') : '<span class="text-gray-400">-</span>';
-                
-                let pierTeamHTML = [];
-                if (rendPier) pierTeamHTML.push(createTag(staffMorning[rendPier].name, 'tag-rendicao'));
-                availableSupport.forEach(p => pierTeamHTML.push(createTag(staffMorning[p].name, 'tag-disponivel')));
-
-                lastDayAssignments = { rendHangar, rendPier };
-
-                const date = new Date(year, month, day);
-                const dayOfWeek = date.getDay();
-                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-                const rowClass = isWeekend ? 'weekend' : '';
-                const dayFormatted = String(day).padStart(2, '0');
-                
-                tableBody.innerHTML += `
-                    <tr class="border-b ${rowClass}">
-                        <td class="p-2 text-center font-semibold">${dayFormatted}</td><td class="p-2 text-center">${weekDays[dayOfWeek]}</td><td class="p-2">${hangarHTML}</td><td class="p-2">${rendHangarHTML}</td><td class="p-2">${pierPrincipalHTML}</td><td class="p-2 flex flex-wrap items-center">${pierTeamHTML.join(' ')}</td>
-                    </tr>`;
-            }
-        }
-
-        function generateNightSchedule() {
-            tableHead.innerHTML = `
-                <tr>
-                    <th class="p-2 text-center">Data</th><th class="p-2 text-center">Dia</th><th class="p-2">Hangar (Noite)</th><th class="p-2">Rend. Hangar (PNT)</th><th class="p-2">Pier (Noite)</th><th class="p-2">Equipe Pier (Noite/PNT)</th>
-                </tr>`;
-            tableBody.innerHTML = '';
+            const userId = auth.currentUser.uid;
+            dbRef = doc(db, `artifacts/${appId}/public/data/schedules`, "main_schedule_data_v2");
             
-            let nightAlternator = 0;
-            let lastDayAssignments = {};
-
-            for (let day = 1; day <= daysInMonth; day++) {
-                const isWorking = (person, day) => !staffNight[person].off.includes(day);
-
-                const workingPrincipals = ['julie', 'lais'].filter(p => isWorking(p, day));
-                let availableSupport = Object.keys(staffNight).filter(p => staffNight[p].team === 'apoio' && isWorking(p, day));
-                let availablePNT = Object.keys(staffNight).filter(p => staffNight[p].team === 'pnt' && isWorking(p, day));
-                
-                if (availablePNT.length > 1) {
-                    const rotation = day % availablePNT.length;
-                    availablePNT = [...availablePNT.slice(rotation), ...availablePNT.slice(0, rotation)];
+            onSnapshot(dbRef, (doc) => {
+                console.log("Dados recebidos do Firestore.");
+                isUpdating = true;
+                if (doc.exists()) {
+                    const data = doc.data();
+                    document.getElementById('main-title').innerHTML = data.title || 'Escala de Conferência';
+                    document.getElementById('main-subtitle').innerHTML = data.subtitle || 'Ferramentaria BSB';
+                    document.getElementById('notes-list').innerHTML = data.notesHTML || '<li><span contenteditable="true">O controle de inflamáveis será feito pelo colaborador que estiver no Hangar.</span><span class="delete-btn no-print ml-4" onclick="deleteListItem(this)">✖</span></li>';
+                    document.getElementById('location-list').innerHTML = data.locationsHTML || '<li><span contenteditable="true">Nova Location</span><span class="delete-btn no-print ml-4" onclick="deleteListItem(this)">✖</span></li>';
+                    document.getElementById('periods-container').innerHTML = data.periodsHTML || '';
                 }
+                addContentListeners(); 
+                setTimeout(() => { isUpdating = false; }, 200);
+            });
 
-                let hangarPrincipal = null, pierPrincipal = null;
-                if (workingPrincipals.length === 2) {
-                    pierPrincipal = nightAlternator === 0 ? 'lais' : 'julie';
-                    hangarPrincipal = nightAlternator === 0 ? 'julie' : 'lais';
-                    nightAlternator = 1 - nightAlternator;
-                } else if (workingPrincipals.length === 1) {
-                    hangarPrincipal = workingPrincipals[0];
-                }
-                
-                const rendHangar = availablePNT.shift();
-                const rendPier = availablePNT.shift();
-                
-                let poolForHangar = availableSupport.filter(p => p !== lastDayAssignments.hangarPrincipal);
-                if(poolForHangar.length === 0) poolForHangar = [...availableSupport];
-                poolForHangar = shuffleArray(poolForHangar, day + 30);
-
-                let poolForPier = availableSupport.filter(p => p !== lastDayAssignments.pierPrincipal);
-                if(poolForPier.length === 0) poolForPier = [...availableSupport];
-                poolForPier = shuffleArray(poolForPier, day + 40);
-
-                if (!hangarPrincipal) hangarPrincipal = poolForHangar.shift();
-                if (!pierPrincipal) pierPrincipal = poolForPier.shift();
-                
-                availableSupport = availableSupport.filter(p => p !== hangarPrincipal && p !== pierPrincipal);
-
-                const hangarHTML = hangarPrincipal ? createTag(`${staffNight[hangarPrincipal].name} (${staffNight[hangarPrincipal].time})`, 'tag-principal') : '<span class="text-gray-400">-</span>';
-                const rendHangarHTML = rendHangar ? createTag(`${staffNight[rendHangar].name} (${staffNight[rendHangar].time})`, 'tag-rendicao') : '<span class="text-gray-400">-</span>';
-                const pierPrincipalHTML = pierPrincipal ? createTag(`${staffNight[pierPrincipal].name} (${staffNight[pierPrincipal].time})`, 'tag-principal') : '<span class="text-gray-400">-</span>';
-                
-                let pierTeamHTML = [];
-                if (rendPier) pierTeamHTML.push(createTag(`${staffNight[rendPier].name} (${staffNight[rendPier].time})`, 'tag-rendicao'));
-                availableSupport.forEach(p => pierTeamHTML.push(createTag(`${staffNight[p].name} (${staffNight[p].time})`, 'tag-disponivel')));
-
-                lastDayAssignments = { hangarPrincipal, pierPrincipal };
-
-                const date = new Date(year, month, day);
-                const dayOfWeek = date.getDay();
-                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-                const rowClass = isWeekend ? 'weekend' : '';
-                const dayFormatted = String(day).padStart(2, '0');
-                
-                tableBody.innerHTML += `
-                    <tr class="border-b ${rowClass}">
-                        <td class="p-2 text-center font-semibold">${dayFormatted}</td>
-                        <td class="p-2 text-center">${weekDays[dayOfWeek]}</td>
-                        <td class="p-2">${hangarHTML}</td>
-                        <td class="p-2">${rendHangarHTML}</td>
-                        <td class="p-2">${pierPrincipalHTML}</td>
-                        <td class="p-2 flex flex-wrap items-center">${pierTeamHTML.join(' ')}</td>
-                    </tr>`;
-            }
+        } catch (error) {
+            console.error("Erro na inicialização:", error);
         }
+    }
 
-        // --- EVENT LISTENERS ---
-        btnManha.addEventListener('click', () => {
-            btnManha.classList.add('active');
-            btnNoite.classList.remove('active');
-            generateMorningSchedule();
+    // --- FUNÇÕES DE EDIÇÃO E SALVAMENTO ---
+    let debounceTimer;
+    function debounceSave() {
+        if (isUpdating) return;
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(saveData, 1000);
+    }
+
+    async function saveData() {
+        console.log("Salvando dados no Firestore...");
+        const dataToSave = {
+            title: document.getElementById('main-title').innerHTML,
+            subtitle: document.getElementById('main-subtitle').innerHTML,
+            notesHTML: document.getElementById('notes-list').innerHTML,
+            locationsHTML: document.getElementById('location-list').innerHTML,
+            periodsHTML: document.getElementById('periods-container').innerHTML,
+            lastUpdated: new Date().toISOString()
+        };
+        try {
+            await setDoc(dbRef, dataToSave);
+            showStatus("Salvo!");
+        } catch (error) {
+            console.error("Erro ao salvar dados: ", error);
+            showStatus("Erro ao salvar", true);
+        }
+    }
+    
+    function addContentListeners() {
+        document.querySelectorAll('[contenteditable="true"]').forEach(el => {
+            el.removeEventListener('input', debounceSave);
+            el.addEventListener('input', debounceSave);
         });
+    }
 
-        btnNoite.addEventListener('click', () => {
-            btnNoite.classList.add('active');
-            btnManha.classList.remove('active');
-            generateNightSchedule();
-        });
+    function showStatus(message, isError = false) {
+        const statusEl = document.getElementById('status');
+        statusEl.textContent = message;
+        statusEl.style.backgroundColor = isError ? '#ef4444' : '#22c55e';
+        statusEl.classList.add('show');
+        setTimeout(() => { statusEl.classList.remove('show'); }, 2000);
+    }
 
-        // --- INITIAL LOAD ---
-        btnManha.click();
-    </script>
+    // --- FUNÇÕES DE MANIPULAÇÃO DO DOM (TORNADAS GLOBAIS) ---
+    window.addRow = (tableBodyId) => {
+        const tableBody = document.getElementById(tableBodyId);
+        const newRow = document.createElement('tr');
+        newRow.className = 'border-b';
+        newRow.innerHTML = `<td contenteditable="true" class="p-3 text-center font-semibold bg-gray-50"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td class="no-print"><span class="delete-btn" onclick="deleteRow(this)">✖</span></td>`;
+        tableBody.appendChild(newRow);
+        addContentListeners();
+        debounceSave();
+    };
+
+    window.deleteRow = (button) => {
+        button.closest('tr').remove();
+        debounceSave();
+    };
+    
+    window.addLocation = () => {
+        const list = document.getElementById('location-list');
+        const newListItem = document.createElement('li');
+        newListItem.innerHTML = `<span contenteditable="true">Nova Location</span><span class="delete-btn no-print ml-4" onclick="deleteListItem(this)">✖</span>`;
+        list.appendChild(newListItem);
+        addContentListeners();
+        debounceSave();
+    };
+    
+    window.addNote = () => {
+        const list = document.getElementById('notes-list');
+        const newListItem = document.createElement('li');
+        newListItem.innerHTML = `<span contenteditable="true">Nova Observação</span><span class="delete-btn no-print ml-4" onclick="deleteListItem(this)">✖</span>`;
+        list.appendChild(newListItem);
+        addContentListeners();
+        debounceSave();
+    };
+
+    window.deleteListItem = (button) => {
+        button.closest('li').remove();
+        debounceSave();
+    };
+
+    window.addPeriod = () => {
+        const container = document.getElementById('periods-container');
+        const newPeriod = document.createElement('div');
+        newPeriod.className = 'space-y-4';
+        const newTableBodyId = `table-body-${Date.now()}`;
+        newPeriod.innerHTML = `
+            <h3 class="text-xl font-bold text-gray-800 mb-4 pb-2 border-b-2 border-gray-200" contenteditable="true">Novo Período</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm text-left">
+                    <thead class="bg-gray-200 text-gray-600 uppercase">
+                        <tr><th class="p-3 text-center">Dia</th><th class="p-3">Responsável</th><th class="p-3">Location</th><th class="p-3">Turno</th><th class="p-3 w-12 no-print"></th></tr>
+                    </thead>
+                    <tbody id="${newTableBodyId}"></tbody>
+                </table>
+            </div>
+            <button onclick="addRow('${newTableBodyId}')" class="no-print text-sm action-button">+ Adicionar Linha à Tabela</button>`;
+        container.appendChild(newPeriod);
+        addContentListeners();
+        debounceSave();
+    };
+
+    initApp();
+</script>
+
 </body>
 </html>
