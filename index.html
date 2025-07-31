@@ -15,7 +15,7 @@
         .delete-btn:hover { color: #b91c1c; transform: scale(1.1); }
         .action-button { background-color: #3b82f6; color: white; font-weight: bold; padding: 8px 16px; border-radius: 8px; transition: background-color 0.2s; }
         .action-button:hover { background-color: #2563eb; }
-        #status { position: fixed; bottom: 10px; right: 10px; background-color: #22c55e; color: white; padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; transition: opacity 0.5s; opacity: 0; z-index: 100; }
+        #status { position: fixed; bottom: 10px; right: 10px; background-color: #22c55e; color: white; padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; transition: opacity 0.5s, background-color 0.5s; opacity: 0; z-index: 100; }
         #status.show { opacity: 1; }
         
         @media print {
@@ -72,17 +72,17 @@
         </div>
 
         <div id="periods-container" class="space-y-12">
-            <!-- Períodos serão carregados aqui -->
+            <!-- Períodos serão carregados aqui pelo Firebase -->
         </div>
         <button onclick="addPeriod()" class="no-print mt-8 w-full action-button">+ Adicionar Novo Período de Escala</button>
     </div>
-    <div id="status" class="no-print">Salvo!</div>
+    <div id="status" class="no-print">Conectando...</div>
 
 <script type="module">
     // Importações do Firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot, enableNetwork } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     // --- CONFIGURAÇÃO DO FIREBASE ---
     const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "YOUR_API_KEY", authDomain: "YOUR_AUTH_DOMAIN", projectId: "YOUR_PROJECT_ID" };
@@ -92,50 +92,35 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // --- AUTENTICAÇÃO E CARGA DOS DADOS ---
+    // --- VARIÁVEIS DE CONTROLE ---
     let dbRef;
-    let isUpdating = false; // Flag para evitar loop de updates
+    let isUpdatingFromFirestore = false; // Flag para evitar loop de updates
+    let debounceTimer;
 
-    async function initApp() {
-        try {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-            const userId = auth.currentUser.uid;
-            dbRef = doc(db, `artifacts/${appId}/public/data/schedules`, "main_schedule_data_v2");
-            
-            onSnapshot(dbRef, (doc) => {
-                console.log("Dados recebidos do Firestore.");
-                isUpdating = true;
-                if (doc.exists()) {
-                    const data = doc.data();
-                    document.getElementById('main-title').innerHTML = data.title || 'Escala de Conferência';
-                    document.getElementById('main-subtitle').innerHTML = data.subtitle || 'Ferramentaria BSB';
-                    document.getElementById('notes-list').innerHTML = data.notesHTML || '<li><span contenteditable="true">O controle de inflamáveis será feito pelo colaborador que estiver no Hangar.</span><span class="delete-btn no-print ml-4" onclick="deleteListItem(this)">✖</span></li>';
-                    document.getElementById('location-list').innerHTML = data.locationsHTML || '<li><span contenteditable="true">Nova Location</span><span class="delete-btn no-print ml-4" onclick="deleteListItem(this)">✖</span></li>';
-                    document.getElementById('periods-container').innerHTML = data.periodsHTML || '';
-                }
-                addContentListeners(); 
-                setTimeout(() => { isUpdating = false; }, 200);
-            });
-
-        } catch (error) {
-            console.error("Erro na inicialização:", error);
+    // --- FUNÇÕES DE FEEDBACK VISUAL ---
+    function showStatus(message, isError = false, isLoading = false) {
+        const statusEl = document.getElementById('status');
+        statusEl.textContent = message;
+        if (isError) {
+            statusEl.style.backgroundColor = '#ef4444'; // red-500
+        } else if (isLoading) {
+            statusEl.style.backgroundColor = '#f97316'; // orange-500
+        } else {
+            statusEl.style.backgroundColor = '#22c55e'; // green-500
+        }
+        statusEl.classList.add('show');
+        if (!isLoading) {
+            setTimeout(() => {
+                statusEl.classList.remove('show');
+            }, 2000);
         }
     }
 
-    // --- FUNÇÕES DE EDIÇÃO E SALVAMENTO ---
-    let debounceTimer;
-    function debounceSave() {
-        if (isUpdating) return;
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(saveData, 1000);
-    }
-
+    // --- LÓGICA DE SALVAMENTO ---
     async function saveData() {
+        if (!dbRef) return;
         console.log("Salvando dados no Firestore...");
+        showStatus("Salvando...", false, true);
         const dataToSave = {
             title: document.getElementById('main-title').innerHTML,
             subtitle: document.getElementById('main-subtitle').innerHTML,
@@ -148,11 +133,18 @@
             await setDoc(dbRef, dataToSave);
             showStatus("Salvo!");
         } catch (error) {
-            console.error("Erro ao salvar dados: ", error);
-            showStatus("Erro ao salvar", true);
+            console.error("Erro detalhado ao salvar: ", error);
+            showStatus("Erro ao salvar. Verifique o console.", true);
         }
     }
-    
+
+    function debounceSave() {
+        if (isUpdatingFromFirestore) return;
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(saveData, 1200); // Aumenta um pouco o tempo para evitar saves excessivos
+    }
+
+    // --- FUNÇÕES DE MANIPULAÇÃO DO DOM ---
     function addContentListeners() {
         document.querySelectorAll('[contenteditable="true"]').forEach(el => {
             el.removeEventListener('input', debounceSave);
@@ -160,17 +152,9 @@
         });
     }
 
-    function showStatus(message, isError = false) {
-        const statusEl = document.getElementById('status');
-        statusEl.textContent = message;
-        statusEl.style.backgroundColor = isError ? '#ef4444' : '#22c55e';
-        statusEl.classList.add('show');
-        setTimeout(() => { statusEl.classList.remove('show'); }, 2000);
-    }
-
-    // --- FUNÇÕES DE MANIPULAÇÃO DO DOM (TORNADAS GLOBAIS) ---
     window.addRow = (tableBodyId) => {
         const tableBody = document.getElementById(tableBodyId);
+        if (!tableBody) return;
         const newRow = document.createElement('tr');
         newRow.className = 'border-b';
         newRow.innerHTML = `<td contenteditable="true" class="p-3 text-center font-semibold bg-gray-50"></td><td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td><td class="no-print"><span class="delete-btn" onclick="deleteRow(this)">✖</span></td>`;
@@ -227,6 +211,50 @@
         addContentListeners();
         debounceSave();
     };
+
+    // --- INICIALIZAÇÃO DA APLICAÇÃO ---
+    async function initApp() {
+        showStatus("Conectando...", false, true);
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                console.log("Autenticado com UID:", user.uid);
+                dbRef = doc(db, `artifacts/${appId}/public/data/schedules`, "main_schedule_data_v3");
+                
+                onSnapshot(dbRef, (doc) => {
+                    console.log("Dados recebidos do Firestore.");
+                    isUpdatingFromFirestore = true;
+                    if (doc.exists()) {
+                        const data = doc.data();
+                        document.getElementById('main-title').innerHTML = data.title;
+                        document.getElementById('main-subtitle').innerHTML = data.subtitle;
+                        document.getElementById('notes-list').innerHTML = data.notesHTML;
+                        document.getElementById('location-list').innerHTML = data.locationsHTML;
+                        document.getElementById('periods-container').innerHTML = data.periodsHTML;
+                        showStatus("Dados sincronizados", false);
+                    } else {
+                        console.log("Nenhum documento encontrado. Criando um novo a partir do template.");
+                        showStatus("Pronto para editar!", false);
+                    }
+                    addContentListeners(); 
+                    setTimeout(() => { isUpdatingFromFirestore = false; }, 200);
+                }, (error) => {
+                    console.error("Erro no listener do Firestore:", error);
+                    showStatus("Erro de conexão.", true);
+                });
+            }
+        });
+
+        try {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+        } catch (error) {
+            console.error("Erro na autenticação:", error);
+            showStatus("Erro de autenticação.", true);
+        }
+    }
 
     initApp();
 </script>
